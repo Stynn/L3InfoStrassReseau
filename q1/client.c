@@ -65,7 +65,6 @@ int main(int argc, char* argv[]){
 		}else{
 			printf("-> Envoi d'un bloc au serveur (taille : %d) ...\n",nb_lu);
 			sendto (fd, &buffer, nb_lu, 0, (struct sockaddr*) &adr, addrlen);
-			sleep(0.1);
 			if(nb_lu < BUFFER_LENGTH){
 				break;
 			}
