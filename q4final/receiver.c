@@ -38,6 +38,9 @@ int main(int argc, char* argv[]){
   int seq;						//Numéro de sequence
   int ack;						//Numéro d'acquittement
   int i;
+  int readable;         //POur savoir si on change le buffer ou non
+  fd_set rfds;          //Ensemble des descripteur
+  struct timeval timer;     //Timer pour le select
 
   //Création du socket
   printf("\nCréation du socket ...\n");
@@ -111,27 +114,42 @@ int main(int argc, char* argv[]){
   connected = 0;
   emission = 1;
   reception = 1;
+  readable = 1;
   seq = 0;
   ack = 0;
 
   while (1 == 1){
+    //Ajout dans la liste du descripteur de la socket
+    FD_ZERO(&rfds);
+    FD_SET(fd, &rfds);
+
+    //Initialisation du timer pour les acquittement
+    timer.tv_sec = 1;
+    timer.tv_usec = 0;
+
+    int nbFd = fd+1;
+
     if (connected == 1){
       //Préparation de l'envoi
-      nb_lu = read(input_fd, tmpEmBuff, BUFFER_LENGTH-2);
+      if (readable == 1){
+        nb_lu = read(input_fd, tmpEmBuff, BUFFER_LENGTH-2);
 
-      for (i = 0 ; i < BUFFER_LENGTH-2 ; i++){
-        buffer[i+2] = tmpEmBuff[i];
+        for (i = 0 ; i < BUFFER_LENGTH-2 ; i++){
+          buffer[i+2] = tmpEmBuff[i];
+        }
       }
-
+      
 
       if (nb_lu == -1){
         printf("-> Echec de la lecture d'un bloc, fin du programme.\n\n");
       }else{
         buffer[0] = seq+'0';
         buffer[1] = ack+'0';
-        printf("-> Envoi d'un bloc (taille : %d, seq : %c, ack : %c)...\n",nb_lu, buffer[0], buffer[1]);
+        printf("-> Envoi d'un bloc (taille : %d, seq : %c, ack : %c)...\n",nb_lu+2, buffer[0], buffer[1]);
         sendto (fd, &buffer, nb_lu+2, 0, (struct sockaddr*) &adr, addrlen);
-        seq = (seq+1)%2;
+        
+        if (readable == 1)  
+          seq = (seq+1)%2;
         if (nb_lu == 0){
           printf("-> Envoi terminé\n");
           emission = 0;
@@ -139,34 +157,57 @@ int main(int argc, char* argv[]){
       }
     }
 
-    nbRecv = recvfrom(fd, &buffer, BUFFER_LENGTH, 0, (struct sockaddr*) &adrLocale, &addrlen);
-    //Récupération du buffer utile
-    for (i = 0 ; i < BUFFER_LENGTH-2 ; i++){
-      tmpRecBuff[i] = buffer[i+2];
-    }
+    int res = select(nbFd, &rfds, NULL, NULL, &timer);
 
-    if (nbRecv == 0 && connected == 0){
-      printf("-> Renvoi du retour serveur ...\n");
-      sendto (fd, &buffer, 0, 0, (struct sockaddr*) &adr, addrlen);
-    }
+    if (res == -1){
+      perror("-> Erreur dans la reception du retour serveur, fin de programme.\n\n");
+      exit(1);
+    }//Cas du timeout
+    else if (res == 0){
+      //Renvoie du message
+      printf("-> TIMEOUT, renvoi du message  (taille : %d, seq : %c)\n",nb_lu+2, buffer[0]);
+      sendto (fd, &buffer, nb_lu+2, 0, (struct sockaddr*) &adr, addrlen);
+    }//Cas de la reception d'un ack
+    else{
+        nbRecv = recvfrom(fd, &buffer, BUFFER_LENGTH, 0, (struct sockaddr*) &adrLocale, &addrlen);
+        //Récupération du buffer utile
+        for (i = 0 ; i < BUFFER_LENGTH-2 ; i++){
+          tmpRecBuff[i] = buffer[i+2];
+        }
 
-    if (nbRecv == 2 && connected == 1){
-      printf("-> Reception terminé\n");
-      reception = 0;
-    }
-    if ( nbRecv == -1){
-      perror("-> Echec de la reception, fin du programme.\n\n");
-    }else if (nbRecv > 0){
-      printf("\x1b[34m-> Reception d'un bloc (taille : %d, seq : %c, ack : %c) \x1b[37m\n",nbRecv, buffer[0], buffer[1]);
-      ack = (ack+1)%2;
-      //Ouverture de l'envoi si on reçois une tram > 0
-      if (connected == 0){
-        printf("-> Succes de la connexion !\n");
-        printf("-> Fin de la phase de connexion.\n");
-        connected = 1;
-      }
-      write(output_fd, tmpRecBuff, nbRecv-2);
-    }
+        if (nbRecv == 0 && connected == 0){
+          printf("-> Renvoi du retour serveur ...\n");
+          sendto(fd, &buffer, 0, 0, (struct sockaddr*) &adr, addrlen);
+        }
+
+        if (nbRecv == 2 && connected == 1){
+          printf("-> Reception termné.\n");
+          reception = 0;
+        }
+        if ( nbRecv == -1){
+          perror("-> Echec de la reception, fin du programme.\n\n");
+        }else if (nbRecv > 0){
+          printf("\x1b[34m-> Reception d'un bloc (taille : %d, seq : %c, ack : %c) \x1b[37m\n",nbRecv-2, buffer[0], buffer[1]);
+          
+          
+          if ((buffer[0]-'0') == ack){  //Cas bon
+            ack = (ack+1)%2;
+            write(output_fd, tmpRecBuff, nbRecv-2);
+            readable = 1;
+          }else{
+            readable = 0;
+          }
+
+          //Ouverture de l'envoi si on reçois une tram > 0
+          if (connected == 0){
+            printf("-> Succes de la connexion !\n");
+            printf("-> Fin de la phase de connexion.\n");
+            connected = 1;
+          }
+
+          
+        }
+    }    
 
     if(emission == 0 && reception == 0){
       buffer[0] = seq+'0';
@@ -176,6 +217,7 @@ int main(int argc, char* argv[]){
       printf("-> Fin de communication.\n");
       break;
     }
+    sleep(3);
   }
 
   //Fermeture de la socket
