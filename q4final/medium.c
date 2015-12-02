@@ -75,10 +75,11 @@ int main(int argc, char **argv)
 	T_init();
 
 	fd_set readset;
+	srand48(5);
 
 	while(1)
 	{
-		int debug = 1;
+		int debug = 0;
 		FD_ZERO(&readset);
 		FD_SET(server_sock_fd, &readset);
 		int nfds = server_sock_fd+1;
@@ -153,7 +154,7 @@ int main(int argc, char **argv)
 					window = FF_append(window, message, packet_number, nb_bytes_received, now, destination_address);
 				}
 				else
-					if(debug)
+					//if(debug)
 						printf("\x1b[34mMedium : Lost message number %d.\x1b[37m\n", packet_number);
 			}
 			else

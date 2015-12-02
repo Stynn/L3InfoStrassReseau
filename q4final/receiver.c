@@ -124,8 +124,8 @@ int main(int argc, char* argv[]){
     FD_SET(fd, &rfds);
 
     //Initialisation du timer pour les acquittement
-    timer.tv_sec = 1;
-    timer.tv_usec = 0;
+    timer.tv_sec = 0;
+    timer.tv_usec = 100000;
 
     int nbFd = fd+1;
 
@@ -166,7 +166,7 @@ int main(int argc, char* argv[]){
     else if (res == 0){
       //Renvoie du message
       printf("-> TIMEOUT, renvoi du message  (taille : %d, seq : %c)\n",nb_lu+2, buffer[0]);
-      sendto (fd, &buffer, nb_lu+2, 0, (struct sockaddr*) &adr, addrlen);
+      readable = 0;
     }//Cas de la reception d'un ack
     else{
         nbRecv = recvfrom(fd, &buffer, BUFFER_LENGTH, 0, (struct sockaddr*) &adrLocale, &addrlen);
@@ -217,7 +217,7 @@ int main(int argc, char* argv[]){
       printf("-> Fin de communication.\n");
       break;
     }
-    sleep(3);
+    //sleep(3);
   }
 
   //Fermeture de la socket

@@ -1,0 +1,18 @@
+Grâce aux numéros de séquence et d'acquittement, les systèmes terminaux peuvent remettre les données reçues dans l'ordre à l'application destinataire.
+
+Les numéros de séquence sont utilisés pour décompter les données dans le flux d'octets. On trouve toujours deux de ces nombres dans chaque segment TCP, qui sont le numéro de séquence et le numéro d'acquittement. Le numéro de séquence représente le propre numéro de séquence de l'émetteur TCP, tandis que le numéro d'acquittement représente le numéro de séquence du destinataire. Afin d'assurer la fiabilité de TCP, le destinataire doit acquitter les segments reçus en indiquant qu'il a reçu toutes les données du flux d'octets jusqu'à un certain numéro de séquence.
+
+Le numéro de séquence indique le premier octet des données.
+
+Par exemple, dans le cas d'un échange de segments par Telnet :
+
+L'hôte A envoie un segment à l'hôte B contenant un octet de données, un numéro de séquence égal à 43 (Seq = 43) et un numéro d'acquittement égal à 79 (Ack = 79),
+L'hôte B envoie un segment ACK à l'hôte A. Le numéro de séquence de ce segment correspond au numéro d'acquittement de l'hôte A (Seq = 79) et le numéro d'acquittement au numéro de séquence de A tel que reçu par B, augmenté de la quantité de données en bytes reçue (Ack = 43 + 1 = 44),
+L'hôte A confirme la réception du segment en envoyant un ACK à l'hôte B, avec comme numéro de séquence son nouveau numéro de séquence, à savoir 44 (Seq = 44) et comme numéro d'acquittement le numéro de séquence du segment précédemment reçu, augmenté de la quantité de données reçue (Ack = 79 + 1 = 80).
+Les numéros de séquence sont des nombres entiers non signés sur 32 bits, qui reviennent à zéro après avoir atteint (2^32)-1. Le choix du numéro de séquence initial est une des clefs de la robustesse et de la sécurité des connexions TCP.
+
+Une amélioration de TCP, nommée acquittement sélectif (selective acknowledgement ou SACK), autorise le destinataire TCP à acquitter des blocs de données reçus dans le désordre.
+
+Chaque partenaire dans une connexion TCP dispose d'un tampon de réception dont la taille n'est pas illimitée. Afin d'éviter qu'un hôte ne surcharge l'autre, TCP prévoit plusieurs mécanismes de contrôle de flux. Ainsi, chaque segment TCP contient la taille disponible dans le tampon de réception de l'hôte qui l'a envoyé. En réponse, l'hôte distant va limiter la taille de la fenêtre d'envoi afin de ne pas le surcharger.
+
+D'autres algorithmes comme Nagle ou Clarck facilitent également le contrôle du flux.
