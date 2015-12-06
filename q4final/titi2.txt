@@ -14,11 +14,12 @@ Le numéro de séquence indique le premier octet des données.
 
 Par exemple, dans le cas d'un échange de segments par Telnet :
 
-L'hôte A envoie un segment à l'hôte B contenant un octet de données, un numéro de séquence égal à 43 (Seq = 43) et un numéro d'acquitconsectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?"
+L'hôte A envoie un segment à l'hôte B contenant un octet de données, un numéro de séquence égal à 43 (Seq = 43) et un numéro d'acquittement égal à 79 (Ack = 79),
+L'hôte B envoie un segment ACK à l'hôte A. Le numéro de séquence de ce segment correspond au numéro d'acquittement de l'hôte A (Seq = 79) et le numéro d'acquittement au numéro de séquence de A tel que reçu par B, augmenté de la quantité de données en bytes reçue (Ack = 43 + 1 = 44),
+L'hôte A confirme la réception du segment en envoyant un ACK à l'hôte B, avec comme numéro de séquence son nouveau numéro de séquence, à savoir 44 (Seq = 44) et comme numéro d'acquittement le numéro de séquence du segment précédemment reçu, augmenté de la quantité de données reçue (Ack = 79 + 1 = 80).
+Les numéros de séquence sont des nombres entiers non signés sur 32 bits, qui reviennent à zéro après avoir atteint (2^32)-1. Le choix du numéro de séquence initial est une des clefs de la robustesse et de la sécurité des connexions TCP.
 
-Traduction de H. Rackham (1914)
-
-"But I must explain to you how all this mistaken idea of denouncing pleasure and praising pain was born and I will give you a complete account of the system, and expound the actual teachings of the great explorer of the truth, the master-builder of human happiness. No one rejects, dislikes, or avoids pleasure itself, because it is pleasure, but because those who do not know how to pursue pleasure rationally encounter consequences that are extremely painful. Nor again is there anyone who loves or pursues or desires to obtain pain of itself, because it  à acquitter des blocs de données reçus dans le désordre.
+Une amélioration de TCP, nommée acquittement sélectif (selective acknowledgement ou SACK), autorise le destinataire TCP à acquitter des blocs de données reçus dans le désordre.
 
 Chaque partenaire dans une connexion TCP dispose d'un tampon de réception dont la taille n'est pas illimitée. Afin d'éviter qu'un hôte ne surcharge l'autre, TCP prévoit plusieurs mécanismes de contrôle de flux. Ainsi, chaque segment TCP contient la taille disponible dans le tampon de réception de l'hôte qui l'a envoyé. En réponse, l'hôte distant va limiter la taille de la fenêtre d'envoi afin de ne pas le surcharger.
 
